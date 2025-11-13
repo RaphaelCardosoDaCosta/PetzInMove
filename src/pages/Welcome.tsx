@@ -21,11 +21,11 @@ const Welcome = () => {
         <div className="max-w-2xl mx-auto text-center animate-fade-in">
           <div className="flex items-center justify-center gap-3 mb-8">
             <PawPrint className="w-16 h-16 text-white" />
-            <h1 className="text-6xl font-bold text-white">PetShop</h1>
+            <h1 className="text-6xl font-bold text-white">PetzInMove</h1>
           </div>
           
           <h2 className="text-4xl font-bold text-white mb-6">
-            Bem-vindo ao PetShop
+            Bem-vindo ao PetzInMove
           </h2>
           
           <p className="text-2xl text-white/90 mb-12">

@@ -44,7 +44,7 @@ const Login = () => {
         <div className="w-full max-w-md">
           <Link to="/" className="inline-flex items-center gap-2 text-3xl font-bold text-primary mb-12">
             <PawPrint className="w-10 h-10" />
-            <span>PetShop</span>
+            <span>PetzInMove</span>
           </Link>
 
           <div className="mb-8">

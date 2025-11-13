@@ -8,7 +8,7 @@ const Footer = () => {
           <div>
             <div className="flex items-center gap-2 text-2xl font-bold mb-4">
               <PawPrint className="w-8 h-8 text-primary" />
-              <span>Petz In Move</span>
+              <span>PetzInMove</span>
             </div>
             <p className="text-background/80">
               Cuidando dos seus melhores amigos com amor e profissionalismo.

@@ -9,7 +9,7 @@ const Header = () => {
         <div className="flex items-center justify-between">
           <Link to="/home" className="flex items-center gap-2 text-2xl font-bold text-primary">
             <PawPrint className="w-8 h-8" />
-            <span>Petz In Move</span>
+            <span>PetzInMove</span>
           </Link>
           
           <nav className="hidden md:flex items-center gap-8">
