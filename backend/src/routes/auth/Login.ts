@@ -15,10 +15,10 @@ export async function login(app: FastifyInstance) {
         if(!findCadastro) {
             return reply.status(400).send({message: "user not found."})
         }
-        const checkSenha = await verifys(bodyData.senha, findCadastro.senha);
+        const checkSenha = await verifys(bodyData.password, findCadastro.password);
         if(!checkSenha) {
             return reply.status(400).send({messege: "invalid password."});
         }
-        const token = app.jwt.sign({id: findCadastro.id, email: findCadastro.email, senha: findCadastro.senha});
+        const token = app.jwt.sign({id: findCadastro.id, email: findCadastro.email, password: findCadastro.password});
         return reply.status(200).send({message: "Welcome to PetzInMove API", token});
     })};

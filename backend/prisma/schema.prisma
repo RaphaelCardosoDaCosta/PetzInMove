@@ -9,25 +9,25 @@ datasource db {
 
 model Agendamento {
   id        String  @id @default(uuid())
-  nome      String
-  telefone  String
-  servico   Servico @relation(fields: [idServico], references: [id], name: "agendamentos", onDelete: Cascade)
-  data      String
-  hora      String
-  idServico Int
+  name      String
+  phone     String
+  service   Servico @relation(fields: [idService], references: [id], name: "agendamentos", onDelete: Cascade)
+  date      String
+  time      String
+  idService Int
 }
 
 model Cadastro {
-  id    String @id @default(uuid())
-  nome  String
-  email String @unique
-  senha String @unique
+  id       String @id @default(uuid())
+  name     String
+  email    String @unique
+  password String @unique
 }
 
 model Servico {
   id           Int           @id @default(autoincrement())
-  nome         String
-  descricao    String
-  preco        Float
+  title        String
+  description  String
+  price        Float
   agendamentos Agendamento[] @relation("agendamentos")
 }
