@@ -4,13 +4,13 @@ import { cadastrar } from "../types/typeCadastro";
 
 class Cadastro {
     async create(body: cadastrar) {
-        const encryptSenha: string = await encrypts(body.senha);
+        const encryptSenha: string = await encrypts(body.password);
 
         const query = await prisma.cadastro.create({
             data: {
-                nome: body.nome,
+                name: body.name,
                 email: body.email,
-                senha: encryptSenha
+                password: encryptSenha
             }
         });
         return query;
@@ -33,9 +33,9 @@ class Cadastro {
                 id: id
             },
             data: {
-                nome: body.nome,
+                name: body.name,
                 email: body.email,
-                senha: body.senha
+                password: body.password
             }
         });
         return {message: "updated!", data}

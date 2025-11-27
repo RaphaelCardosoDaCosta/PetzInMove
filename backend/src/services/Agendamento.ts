@@ -7,19 +7,19 @@ class Agendamento {
     async create(body: agendamentoSchemaRequest) {
         const query = await prisma.agendamento.create({
             data: {
-                nome: body.nome,
-                telefone: body.telefone,
-                data: body.data,
-                hora: body.hora,
-                servico: { connect: { id: body.idServico } }
+                name: body.name,
+                phone: body.phone,
+                date: body.date,
+                time: body.time,
+                service: { connect: { id: body.idService } }
             },
-            include: { servico: true }
+            include: { service: true }
         });
         return query;
     }
     async getAll() {
         const query = await prisma.agendamento.findMany({
-            include: { servico: true }
+            include: { service: true }
         });
         return query;
 
@@ -34,10 +34,10 @@ class Agendamento {
         const query = await prisma.agendamento.update({
             where: { id: id },
             data: {
-                nome: body.nome,
-                telefone: body.telefone,
-                data: body.data,
-                hora: body.hora
+                name: body.name,
+                phone: body.phone,
+                date: body.date,
+                time: body.time
             },
         });
         return {message: "updated!", query};
