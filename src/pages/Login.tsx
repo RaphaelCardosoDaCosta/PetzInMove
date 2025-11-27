@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,19 +6,22 @@ import { Label } from "@/components/ui/label";
 import { PawPrint } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import heroImage from "@/assets/hero-dog.jpg";
+import { api, ApiError } from "@/lib/api";
+import { authStorage } from "@/lib/auth-storage";
 
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     email: "",
-    password: "",
+    senha: "",
   });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.email || !formData.password) {
+
+    if (!formData.email || !formData.senha) {
       toast({
         title: "Erro no login",
         description: "Por favor, preencha todos os campos.",
@@ -27,14 +30,31 @@ const Login = () => {
       return;
     }
 
-    toast({
-      title: "Login realizado!",
-      description: "Bem-vindo de volta ao Petz In Move.",
-    });
+    try {
+      setIsLoading(true);
+      const response = await api.login({
+        email: formData.email,
+        senha: formData.senha,
+      });
+      authStorage.setToken(response.token);
 
-    setTimeout(() => {
+      toast({
+        title: "Login realizado!",
+        description: "Bem-vindo de volta ao Petz In Move.",
+      });
+
       navigate("/home");
-    }, 1000);
+    } catch (error) {
+      const message =
+        error instanceof ApiError ? error.message : "Erro ao realizar login.";
+      toast({
+        title: "Erro no login",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -72,18 +92,18 @@ const Login = () => {
                 type="password"
                 placeholder=""
                 className="h-12"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                value={formData.senha}
+                onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
               />
             </div>
 
-            <Button type="submit" className="w-full h-12 text-base" size="lg">
-              Entrar
+            <Button type="submit" className="w-full h-12 text-base" size="lg" disabled={isLoading}>
+              {isLoading ? "Entrando..." : "Entrar"}
             </Button>
           </form>
 
           <p className="text-center mt-8 text-base text-muted-foreground">
-            Não tem uma conta?{" "}
+            Nao tem uma conta?{" "}
             <Link to="/cadastro" className="text-primary font-semibold hover:underline">
               Cadastre-se
             </Link>

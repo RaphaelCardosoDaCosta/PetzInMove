@@ -3,12 +3,12 @@ import { servicoSchema } from "./typeServico";
 
 export const agendamentoSchema = z.object({
     id: z.string().uuid().optional(),
-    name: z.string().min(3),
-    phone: z.string().min(6),
+    nome: z.string().min(3),
+    telefone: z.string().min(6),
     service: z.array(z.lazy((): ZodSchema => servicoSchema)).optional(),
-    date: z.string(),
-    time: z.string(),
-    idService: z.number().optional()
+    data: z.string(),
+    hora: z.string(),
+    idServico: z.number().optional()
 });
 
 export type agendamento = z.infer<typeof agendamentoSchema>;

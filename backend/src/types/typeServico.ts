@@ -4,9 +4,9 @@ import { agendamentoSchema } from "./typeAgendamento";
 
 export const servicoSchema = z.object({
     id: z.number().optional(),
-    title: z.string().min(3).max(100),
-    description: z.string().min(10).max(500),
-    price: z.union([
+    nome: z.string().min(3).max(100),
+    descricao: z.string().min(10).max(500),
+    preco: z.union([
         z.number(),
         z.string().transform((val) => parseFloat(val)),
     ]),

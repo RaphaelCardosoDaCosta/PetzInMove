@@ -1,8 +1,8 @@
-import { compare, hashSync } from "bcryptjs";
+import { compare, hash } from "bcryptjs";
 
 
 export async function encrypts(password: string): Promise<string> {
-    return hashSync(password);
+    return await hash(password, 10);
 }
 
 export async function verifys(passwordGot: string, passwordDb: string): Promise<boolean> {

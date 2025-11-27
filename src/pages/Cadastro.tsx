@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,20 +6,22 @@ import { Label } from "@/components/ui/label";
 import { PawPrint } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import heroImage from "@/assets/hero-dog.jpg";
+import { api, ApiError } from "@/lib/api";
 
 const Cadastro = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
-    name: "",
+    nome: "",
     email: "",
-    password: "",
+    senha: "",
   });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.name || !formData.email || !formData.password) {
+
+    if (!formData.nome || !formData.email || !formData.senha) {
       toast({
         title: "Erro no cadastro",
         description: "Por favor, preencha todos os campos.",
@@ -28,7 +30,7 @@ const Cadastro = () => {
       return;
     }
 
-    if (formData.password.length < 6) {
+    if (formData.senha.length < 6) {
       toast({
         title: "Senha fraca",
         description: "A senha deve ter pelo menos 6 caracteres.",
@@ -37,14 +39,31 @@ const Cadastro = () => {
       return;
     }
 
-    toast({
-      title: "Cadastro realizado!",
-      description: "Bem-vindo ao Petz In Move. Você já pode fazer login.",
-    });
+    try {
+      setIsLoading(true);
+      await api.criarCadastro({
+        nome: formData.nome,
+        email: formData.email,
+        senha: formData.senha,
+      });
 
-    setTimeout(() => {
+      toast({
+        title: "Cadastro realizado!",
+        description: "Bem-vindo ao Petz In Move. Voce ja pode fazer login.",
+      });
+
       navigate("/login");
-    }, 1000);
+    } catch (error) {
+      const message =
+        error instanceof ApiError ? error.message : "Erro ao realizar cadastro.";
+      toast({
+        title: "Erro no cadastro",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -59,7 +78,7 @@ const Cadastro = () => {
 
           <div className="mb-8">
             <h1 className="text-4xl font-bold mb-3">Criar conta</h1>
-            <p className="text-xl text-muted-foreground">Cadastre-se para começar</p>
+            <p className="text-xl text-muted-foreground">Cadastre-se para comecar</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -69,8 +88,8 @@ const Cadastro = () => {
                 id="name"
                 placeholder=""
                 className="h-12"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                value={formData.nome}
+                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
               />
             </div>
 
@@ -93,20 +112,20 @@ const Cadastro = () => {
                 type="password"
                 placeholder=""
                 className="h-12"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                value={formData.senha}
+                onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
               />
             </div>
 
-            <Button type="submit" className="w-full h-12 text-base" size="lg">
-              Cadastrar
+            <Button type="submit" className="w-full h-12 text-base" size="lg" disabled={isLoading}>
+              {isLoading ? "Cadastrando..." : "Cadastrar"}
             </Button>
           </form>
 
           <p className="text-center mt-8 text-base text-muted-foreground">
-            Já tem uma conta?{" "}
+            Ja tem uma conta?{" "}
             <Link to="/login" className="text-primary font-semibold hover:underline">
-              Faça login
+              Faca login
             </Link>
           </p>
         </div>

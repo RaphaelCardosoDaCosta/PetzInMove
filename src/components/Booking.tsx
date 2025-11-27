@@ -1,4 +1,5 @@
-import { useState } from "react";
+﻿import { useMemo, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,50 +27,101 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { api, Agendamento, AgendamentoPayload, ApiError, Servico } from "@/lib/api";
+import { authStorage } from "@/lib/auth-storage";
 
-interface Agendamento {
-  id: string;
-  name: string;
-  phone: string;
-  service: string;
-  date: string;
-  time: string;
-}
+const initialFormState = {
+  nome: "",
+  telefone: "",
+  data: "",
+  hora: "",
+  idServico: "",
+};
+
+const fallbackServicos: Servico[] = [
+  {
+    id: 1,
+    nome: "Banho e Tosa",
+    descricao: "Servico referencia para demonstracao",
+    preco: 80,
+  },
+  {
+    id: 2,
+    nome: "Consulta Veterinaria",
+    descricao: "Servico referencia para demonstracao",
+    preco: 150,
+  },
+  {
+    id: 3,
+    nome: "Day Spa Pet",
+    descricao: "Servico referencia para demonstracao",
+    preco: 200,
+  },
+];
 
 const Booking = () => {
   const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    name: "",
-    phone: "",
-    service: "",
-    date: "",
-    time: "",
-  });
-  const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
+  const [formData, setFormData] = useState(initialFormState);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const token = authStorage.getToken();
 
-  // TODO: Adicionar useEffect para buscar agendamentos do backend
-  // useEffect(() => {
-  //   const fetchAgendamentos = async () => {
-  //     try {
-  //       const response = await axios.get('/api/agendamentos');
-  //       setAgendamentos(response.data);
-  //     } catch (error) {
-  //       console.error('Erro ao buscar agendamentos:', error);
-  //     }
-  //   };
-  //   fetchAgendamentos();
-  // }, []);
+  const servicosQuery = useQuery({
+    queryKey: ["servicos"],
+    queryFn: api.listarServicos,
+  });
+
+  const agendamentosQuery = useQuery({
+    queryKey: ["agendamentos"],
+    queryFn: () => api.listarAgendamentos(token ?? ""),
+    enabled: Boolean(token),
+  });
+
+  const createAgendamento = useMutation({
+    mutationFn: (payload: AgendamentoPayload) => {
+      if (!token) {
+        return Promise.reject(new Error("Token ausente"));
+      }
+      return api.criarAgendamento(payload, token);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Agendamento confirmado!",
+        description: "Seu agendamento foi registrado com sucesso.",
+      });
+      setFormData(initialFormState);
+      agendamentosQuery.refetch();
+    },
+    onError: (error: unknown) => {
+      const message =
+        error instanceof ApiError || error instanceof Error
+          ? error.message
+          : "Erro ao criar agendamento.";
+      toast({
+        title: "Erro no agendamento",
+        description: message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!token) {
+      toast({
+        title: "Autenticacao necessaria",
+        description: "Faca login para realizar agendamentos.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (
-      !formData.name ||
-      !formData.phone ||
-      !formData.service ||
-      !formData.date ||
-      !formData.time
+      !formData.nome ||
+      !formData.telefone ||
+      !formData.data ||
+      !formData.hora ||
+      !formData.idServico
     ) {
       toast({
         title: "Erro no agendamento",
@@ -79,36 +131,33 @@ const Booking = () => {
       return;
     }
 
-    // TODO: Enviar para o backend
-    // try {
-    //   const response = await axios.post('/api/agendamentos', formData);
-    //   const novoAgendamento = response.data;
-    //   setAgendamentos([...agendamentos, novoAgendamento]);
-    // } catch (error) {
-    //   console.error('Erro ao criar agendamento:', error);
-    //   return;
-    // }
-
-    // Simulação: adicionar localmente enquanto não há backend
-    const novoAgendamento: Agendamento = {
-      id: Date.now().toString(),
-      ...formData,
+    const payload: AgendamentoPayload = {
+      nome: formData.nome,
+      telefone: formData.telefone,
+      data: formData.data,
+      hora: formData.hora,
+      idServico: Number(formData.idServico),
     };
-    setAgendamentos([...agendamentos, novoAgendamento]);
 
-    toast({
-      title: "Agendamento confirmado!",
-      description: `${formData.name}, seu agendamento foi realizado com sucesso para ${formData.date} às ${formData.time}.`,
-    });
-
-    setFormData({
-      name: "",
-      phone: "",
-      service: "",
-      date: "",
-      time: "",
-    });
+    await createAgendamento.mutateAsync(payload);
   };
+
+  const agendamentos = agendamentosQuery.data ?? [];
+  const servicos = servicosQuery.data ?? [];
+  const selectableServicos = servicos.length > 0 ? servicos : fallbackServicos;
+
+  const selectedServiceName = useMemo(() => {
+    const selected = selectableServicos.find((service) => String(service.id) === formData.idServico);
+    return selected?.nome ?? "";
+  }, [formData.idServico, selectableServicos]);
+
+  const dialogSubtitle = !token
+    ? "Faca login para visualizar seus agendamentos."
+    : agendamentosQuery.isLoading
+      ? "Carregando agendamentos..."
+      : agendamentos.length === 0
+        ? "Nenhum agendamento encontrado."
+        : undefined;
 
   return (
     <section id="agendar" className="py-24 bg-muted">
@@ -124,39 +173,29 @@ const Booking = () => {
               <DialogTitle>Lista de Agendamentos</DialogTitle>
             </DialogHeader>
             <div className="mt-4">
-              {agendamentos.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">
-                  Nenhum agendamento encontrado.
-                </p>
+              {dialogSubtitle ? (
+                <p className="text-center text-muted-foreground py-8">{dialogSubtitle}</p>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Nome</TableHead>
                       <TableHead>Telefone</TableHead>
-                      <TableHead>Serviço</TableHead>
+                      <TableHead>Servico</TableHead>
                       <TableHead>Data</TableHead>
-                      <TableHead>Horário</TableHead>
+                      <TableHead>Horario</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {agendamentos.map((agendamento) => (
+                    {agendamentos.map((agendamento: Agendamento) => (
                       <TableRow key={agendamento.id}>
-                        <TableCell>{agendamento.name}</TableCell>
-                        <TableCell>{agendamento.phone}</TableCell>
+                        <TableCell>{agendamento.nome}</TableCell>
+                        <TableCell>{agendamento.telefone}</TableCell>
+                        <TableCell>{agendamento.servico?.nome ?? "-"}</TableCell>
                         <TableCell>
-                          {agendamento.service === "banho-tosa" &&
-                            "Banho e Tosa"}
-                          {agendamento.service === "consulta" &&
-                            "Consulta Veterinária"}
-                          {agendamento.service === "spa" && "Day Spa Pet"}
+                          {new Date(agendamento.data).toLocaleDateString("pt-BR")}
                         </TableCell>
-                        <TableCell>
-                          {new Date(agendamento.date).toLocaleDateString(
-                            "pt-BR"
-                          )}
-                        </TableCell>
-                        <TableCell>{agendamento.time}</TableCell>
+                        <TableCell>{agendamento.hora}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -174,7 +213,7 @@ const Booking = () => {
             </h2>
           </div>
           <p className="text-xl text-muted-foreground">
-            Escolha o melhor dia e horário para cuidar do seu pet
+            Escolha o melhor dia e horario para cuidar do seu pet
           </p>
         </div>
 
@@ -186,9 +225,9 @@ const Booking = () => {
                 <Input
                   id="name"
                   placeholder="Seu nome completo"
-                  value={formData.name}
+                  value={formData.nome}
                   onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
+                    setFormData({ ...formData, nome: e.target.value })
                   }
                 />
               </div>
@@ -197,31 +236,38 @@ const Booking = () => {
                 <Input
                   id="phone"
                   placeholder="(00) 00000-0000"
-                  value={formData.phone}
+                  value={formData.telefone}
                   onChange={(e) =>
-                    setFormData({ ...formData, phone: e.target.value })
+                    setFormData({ ...formData, telefone: e.target.value })
                   }
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="service">Serviço Desejado</Label>
+              <Label htmlFor="service">Servico Desejado</Label>
               <Select
-                value={formData.service}
+                value={formData.idServico}
                 onValueChange={(value) =>
-                  setFormData({ ...formData, service: value })
+                  setFormData({ ...formData, idServico: value })
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione o serviço" />
+                  <SelectValue placeholder="Selecione o servico" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="banho-tosa">Banho e Tosa</SelectItem>
-                  <SelectItem value="consulta">Consulta Veterinária</SelectItem>
-                  <SelectItem value="spa">Day Spa Pet</SelectItem>
+                  {selectableServicos.map((servico: Servico) => (
+                    <SelectItem key={servico.id} value={String(servico.id)}>
+                      {servico.nome}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              {!servicosQuery.isLoading && servicos.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Nenhum servico cadastrado. Exibindo opcoes de referencia.
+                </p>
+              )}
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
@@ -230,39 +276,51 @@ const Booking = () => {
                 <Input
                   id="date"
                   type="date"
-                  value={formData.date}
+                  value={formData.data}
                   onChange={(e) =>
-                    setFormData({ ...formData, date: e.target.value })
+                    setFormData({ ...formData, data: e.target.value })
                   }
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="time">Horário</Label>
+                <Label htmlFor="time">Horario</Label>
                 <Select
-                  value={formData.time}
+                  value={formData.hora}
                   onValueChange={(value) =>
-                    setFormData({ ...formData, time: value })
+                    setFormData({ ...formData, hora: value })
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione o horário" />
+                    <SelectValue placeholder="Selecione o horario" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="08:00">08:00</SelectItem>
-                    <SelectItem value="09:00">09:00</SelectItem>
-                    <SelectItem value="10:00">10:00</SelectItem>
-                    <SelectItem value="11:00">11:00</SelectItem>
-                    <SelectItem value="14:00">14:00</SelectItem>
-                    <SelectItem value="15:00">15:00</SelectItem>
-                    <SelectItem value="16:00">16:00</SelectItem>
-                    <SelectItem value="17:00">17:00</SelectItem>
+                    {[
+                      "08:00",
+                      "09:00",
+                      "10:00",
+                      "11:00",
+                      "14:00",
+                      "15:00",
+                      "16:00",
+                      "17:00",
+                    ].map((time) => (
+                      <SelectItem key={time} value={time}>
+                        {time}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
-            <Button type="submit" className="w-full" size="lg">
-              Confirmar Agendamento
+            {selectedServiceName && (
+              <p className="text-sm text-muted-foreground">
+                Servico selecionado: {selectedServiceName}
+              </p>
+            )}
+
+            <Button type="submit" className="w-full" size="lg" disabled={createAgendamento.isPending}>
+              {createAgendamento.isPending ? "Enviando..." : "Confirmar Agendamento"}
             </Button>
           </form>
         </Card>

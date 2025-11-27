@@ -1,11 +1,10 @@
-import { FastifyInstance } from "fastify/types/instance";
+﻿import { FastifyInstance } from "fastify/types/instance";
 import { agendamento, agendamentoSchema } from "../types/typeAgendamento";
 import { Agendamento } from "../services/Agendamento";
 
 export async function rotaAgendamento(app: FastifyInstance) {
 
     app.addHook('preHandler', async (request, reply) => {
-        // Middleware logic here (e.g., authentication, logging)
         try {
             await request.jwtVerify();
         }
@@ -17,8 +16,11 @@ export async function rotaAgendamento(app: FastifyInstance) {
     app.post('/agendamentos', async (req, reply) => {
         const bodyParser = agendamentoSchema.parse(req.body);
         const agendamentoInstace = new Agendamento();
-        const agendamentos = await agendamentoInstace.create(bodyParser);
-        return reply.send("agendamento criado");
+        const agendamentoCriado = await agendamentoInstace.create(bodyParser);
+        return reply.status(201).send({
+            message: "Agendamento criado com sucesso.",
+            data: agendamentoCriado
+        });
     });
     app.get('/agendamentos', async (req, reply) => {
         const agendamentoInstace = new Agendamento();
@@ -28,8 +30,8 @@ export async function rotaAgendamento(app: FastifyInstance) {
     app.delete('/agendamentos/:id', async (req, reply) => {
         const { id } = req.params as { id: string };
         const agendamentoInstace = new Agendamento();
-        const agendamentos = await agendamentoInstace.delete(id);
-        return reply.send("agendamento deletado");
+        await agendamentoInstace.delete(id);
+        return reply.send({ message: "Agendamento deletado com sucesso." });
     });
 
     
@@ -37,7 +39,10 @@ export async function rotaAgendamento(app: FastifyInstance) {
         const { id } = req.params as { id: string };
         const bodyParser: agendamento = req.body as agendamento;
         const agendamentoInstace = new Agendamento();
-        const agendamentos = await agendamentoInstace.update(bodyParser, id);
-        return reply.send("agendamento atualizado " + agendamentos);
+        const agendamentoAtualizado = await agendamentoInstace.update(bodyParser, id);
+        return reply.send({
+            message: "Agendamento atualizado com sucesso.",
+            data: agendamentoAtualizado
+        });
     });
 }

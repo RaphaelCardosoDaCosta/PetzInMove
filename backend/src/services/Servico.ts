@@ -6,17 +6,27 @@ class Servico {
     async create(body: Servicos) {
         const query = await prisma.servico.create({
             data: {
-                title: body.title,
-                description: body.description,
-                price: body.price
+                title: body.nome,
+                description: body.descricao,
+                price: body.preco
             }
         });
-        return query;
+        return {
+            id: query.id,
+            nome: query.title,
+            descricao: query.description,
+            preco: query.price
+        };
     }
 
     async getAll() {
         const query = await prisma.servico.findMany();
-        return query;
+        return query.map(servico => ({
+            id: servico.id,
+            nome: servico.title,
+            descricao: servico.description,
+            preco: servico.price
+        }));
     }
 
     async delete(id: number) {
@@ -30,12 +40,20 @@ class Servico {
         const query = await prisma.servico.update({
             where: { id: id },
             data: {
-                title: body.title,
-                description: body.description,
-                price: body.price
+                title: body.nome,
+                description: body.descricao,
+                price: body.preco
             }
         });
-        return {message: "updated!", query};
+        return {
+            message: "updated!", 
+            query: {
+                id: query.id,
+                nome: query.title,
+                descricao: query.description,
+                preco: query.price
+            }
+        };
     }
 }
 

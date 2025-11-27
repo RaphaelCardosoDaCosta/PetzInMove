@@ -4,20 +4,28 @@ import { cadastrar } from "../types/typeCadastro";
 
 class Cadastro {
     async create(body: cadastrar) {
-        const encryptSenha: string = await encrypts(body.password);
+        const encryptSenha: string = await encrypts(body.senha);
 
         const query = await prisma.cadastro.create({
             data: {
-                name: body.name,
+                name: body.nome,
                 email: body.email,
                 password: encryptSenha
             }
         });
-        return query;
+        return {
+            id: query.id,
+            nome: query.name,
+            email: query.email
+        };
     }
     async getAll() {
         const query = await prisma.cadastro.findMany();
-        return query;
+        return query.map(cadastro => ({
+            id: cadastro.id,
+            nome: cadastro.name,
+            email: cadastro.email
+        }));
     }
     async delete(id: string) {
         const query = await prisma.cadastro.delete({
@@ -28,17 +36,25 @@ class Cadastro {
         return {message: "succesfully deleted!"}
     }
     async update(body: cadastrar , id: string) {
+        const encryptSenha: string = await encrypts(body.senha);
         const data = await prisma.cadastro.update({
             where: {
                 id: id
             },
             data: {
-                name: body.name,
+                name: body.nome,
                 email: body.email,
-                password: body.password
+                password: encryptSenha
             }
         });
-        return {message: "updated!", data}
+        return {
+            message: "updated!", 
+            data: {
+                id: data.id,
+                nome: data.name,
+                email: data.email
+            }
+        };
     }
 
 }
